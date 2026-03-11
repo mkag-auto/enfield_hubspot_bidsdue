@@ -63,6 +63,7 @@ export default async function handler(req, res) {
       access: "public",
       contentType: "application/json",
       allowOverwrite: true,
+      addRandomSuffix: false,
     });
 
     return res.status(200).json({ ok: true, count: shaped.length });
