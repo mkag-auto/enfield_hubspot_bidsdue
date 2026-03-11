@@ -60,7 +60,7 @@ export default async function handler(req, res) {
 
     // Save to Vercel Blob — overwrites the same file each time
     await put("deals.json", payload, {
-      access: "public",
+      access: "private",
       contentType: "application/json",
       allowOverwrite: true,
     });
