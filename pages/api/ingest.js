@@ -18,11 +18,28 @@ export default function handler(req, res) {
   }
 
   try {
-    const { deals, owners } = req.body;
+    console.log("Ingest body:", JSON.stringify(req.body, null, 2));
 
-    if (!Array.isArray(deals)) {
-      return res.status(400).json({ error: "Expected body.deals to be an array" });
-    }
+const body = req.body;
+let deals = body?.deals
+          ?? body?.body?.deals
+          ?? body?.[0]?.deals
+          ?? body?.json?.deals
+          ?? null;
+
+let owners = body?.owners
+           ?? body?.body?.owners
+           ?? body?.[0]?.owners
+           ?? body?.json?.owners
+           ?? [];
+
+if (!Array.isArray(deals)) {
+  return res.status(400).json({
+    error: "Expected body.deals to be an array",
+    receivedKeys: Object.keys(body || {}),
+    receivedBody: body,
+  });
+}
 
     // Build owner lookup map: id -> name
     const ownerMap = {};
