@@ -82,6 +82,7 @@ export default function BidBoard() {
         <title>Enfield — Bid Board</title>
         <meta name="viewport" content="width=220" />
         <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        <meta name="robots" content="noindex, nofollow" />
       </Head>
 
       <div style={s.root}>
