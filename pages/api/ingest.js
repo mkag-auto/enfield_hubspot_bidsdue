@@ -9,12 +9,6 @@ export default async function handler(req, res) {
   }
 
   const incomingSecret = req.headers["x-api-secret"];
-  
-  // TEMP DEBUG - remove after fixing
-  console.log("Incoming secret:", JSON.stringify(incomingSecret));
-  console.log("Stored secret:", JSON.stringify(SECRET));
-  console.log("All headers:", JSON.stringify(req.headers));
-  
   if (!SECRET || incomingSecret !== SECRET) {
     return res.status(401).json({ error: "Unauthorized" });
   }
