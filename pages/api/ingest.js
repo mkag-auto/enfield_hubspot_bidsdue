@@ -1,47 +1,37 @@
 // pages/api/ingest.js
-// Receives webhook POST from n8n with deals + owners arrays
-// Joins owner names onto deals and saves to /tmp
+import { put } from "@vercel/blob";
 
-import fs from "fs";
-
-const STORAGE_PATH = "/tmp/deals.json";
 const SECRET = process.env.INGEST_SECRET;
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   const incomingSecret = req.headers["x-api-secret"];
-  if (false) {
+  if (!SECRET || incomingSecret !== SECRET) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
-    console.log("Ingest body:", JSON.stringify(req.body, null, 2));
+    // n8n can nest the payload at different levels depending on config
+    const root =
+      (Array.isArray(req.body?.deals)        && req.body)       ||
+      (Array.isArray(req.body?.body?.deals)  && req.body.body)  ||
+      (Array.isArray(req.body?.data?.deals)  && req.body.data)  ||
+      null;
 
-const body = req.body;
-let deals = body?.deals
-          ?? body?.body?.deals
-          ?? body?.[0]?.deals
-          ?? body?.json?.deals
-          ?? null;
+    if (!root) {
+      return res.status(400).json({
+        error: "Expected body.deals to be an array",
+        receivedKeys: Object.keys(req.body || {}),
+        receivedBody: req.body,
+      });
+    }
 
-let owners = body?.owners
-           ?? body?.body?.owners
-           ?? body?.[0]?.owners
-           ?? body?.json?.owners
-           ?? [];
+    const { deals, owners } = root;
 
-if (!Array.isArray(deals)) {
-  return res.status(400).json({
-    error: "Expected body.deals to be an array",
-    receivedKeys: Object.keys(body || {}),
-    receivedBody: body,
-  });
-}
-
-    // Build owner lookup map: id -> name
+    // Build owner lookup: id -> name
     const ownerMap = {};
     if (Array.isArray(owners)) {
       for (const o of owners) {
@@ -49,7 +39,7 @@ if (!Array.isArray(deals)) {
       }
     }
 
-    // Shape deals — join owner name, normalise fields
+    // Shape and join owner names
     const shaped = deals.map((d) => ({
       id: d.url?.split("/").pop() || Math.random().toString(36).slice(2),
       name: (d.dealname || "").trim(),
@@ -60,19 +50,24 @@ if (!Array.isArray(deals)) {
       url: d.url || null,
     }));
 
-    // Sort soonest first
     shaped.sort((a, b) => {
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
       return new Date(a.dueDate) - new Date(b.dueDate);
     });
 
-    const payload = { deals: shaped, updatedAt: new Date().toISOString() };
-    fs.writeFileSync(STORAGE_PATH, JSON.stringify(payload));
+    const payload = JSON.stringify({ deals: shaped, updatedAt: new Date().toISOString() });
+
+    // Save to Vercel Blob — overwrites the same file each time
+    await put("deals.json", payload, {
+      access: "public",
+      contentType: "application/json",
+      allowOverwrite: true,
+    });
 
     return res.status(200).json({ ok: true, count: shaped.length });
   } catch (err) {
     console.error("Ingest error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error", detail: err.message });
   }
 }
