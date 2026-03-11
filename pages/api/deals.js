@@ -1,15 +1,18 @@
 // pages/api/deals.js
-import { list, download } from "@vercel/blob";
+import { list } from "@vercel/blob";
 
 export default async function handler(req, res) {
   try {
-    const { blobs } = await list({ prefix: "deals.json" });
+    const { blobs } = await list({ 
+      prefix: "deals.json",
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
 
     if (!blobs.length) {
       return res.status(200).json({ deals: [], updatedAt: null });
     }
 
-    const response = await download(blobs[0].url);
+    const response = await fetch(blobs[0].url);
     const { deals, updatedAt } = await response.json();
 
     res.setHeader("Cache-Control", "no-store");
