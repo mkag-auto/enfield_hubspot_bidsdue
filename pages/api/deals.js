@@ -3,10 +3,7 @@ import { list } from "@vercel/blob";
 
 export default async function handler(req, res) {
   try {
-    const { blobs } = await list({ 
-      prefix: "deals.json",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
+    const { blobs } = await list({ prefix: "deals.json" });
 
     if (!blobs.length) {
       return res.status(200).json({ deals: [], updatedAt: null });
