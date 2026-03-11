@@ -18,9 +18,9 @@ function getDueInfo(dueDateStr) {
 
   const timeLabel = due.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 
-  if (diff < 0)  return { label: "OVERDUE",       timeLabel, color: RED,     urgent: true,  pulse: true  };
-  if (diff === 0) return { label: "TODAY",          timeLabel, color: RED,     urgent: true,  pulse: true  };
-  if (diff === 1) return { label: "TOMORROW",       timeLabel, color: MED_RED, urgent: true,  pulse: false };
+  if (diff < 0)  return { label: "OVERDUE",   timeLabel, color: RED,     urgent: true,  pulse: true  };
+  if (diff === 0) return { label: "TODAY",     timeLabel, color: RED,     urgent: true,  pulse: true  };
+  if (diff === 1) return { label: "TOMORROW",  timeLabel, color: MED_RED, urgent: true,  pulse: false };
   if (diff <= 7) {
     const day = due.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
     return { label: day.toUpperCase(), timeLabel, color: MED_RED, urgent: true, pulse: false };
@@ -41,11 +41,10 @@ function initials(name) {
 }
 
 export default function BidBoard() {
-  const [deals, setDeals]           = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
-  const [updatedAt, setUpdatedAt]   = useState(null);
-  const [now, setNow]               = useState(new Date());
+  const [deals, setDeals]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
+  const [updatedAt, setUpdatedAt] = useState(null);
 
   const fetchDeals = useCallback(async () => {
     try {
@@ -64,25 +63,18 @@ export default function BidBoard() {
 
   useEffect(() => {
     fetchDeals();
-    const refresh = setInterval(fetchDeals, 2 * 60 * 1000); // every 2 min
-    const clock   = setInterval(() => setNow(new Date()), 30000);
-    return () => { clearInterval(refresh); clearInterval(clock); };
+    const refresh = setInterval(fetchDeals, 2 * 60 * 1000);
+    return () => clearInterval(refresh);
   }, [fetchDeals]);
 
-  const timeStr    = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  const dateStr    = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-  const urgentCount = deals.filter(d => {
-    const { urgent } = getDueInfo(d.dueDate);
-    return urgent;
-  }).length;
+  const urgentCount = deals.filter(d => getDueInfo(d.dueDate).urgent).length;
 
   return (
     <>
       <Head>
         <title>Enfield — Bid Board</title>
-        <meta name="viewport" content="width=220" />
-        <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-        <meta name="robots" content="noindex, nofollow" />
+        <meta name="viewport" content="width=300" />
+        <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
       <div style={s.root}>
@@ -91,8 +83,6 @@ export default function BidBoard() {
         <div style={s.header}>
           <div style={s.logo}>ENFIELD</div>
           <div style={s.sub}>BID BOARD</div>
-          <div style={s.time}>{timeStr}</div>
-          <div style={s.date}>{dateStr}</div>
         </div>
 
         {/* STATS */}
@@ -130,12 +120,13 @@ export default function BidBoard() {
             return (
               <div key={deal.id || i} style={{
                 ...s.card,
-                background:        due.urgent ? "#1c1010" : "#161616",
-                border:            `1px solid ${due.urgent ? "#3a1515" : "#222"}`,
-                borderLeftColor:   due.color,
-                borderLeftWidth:   3,
-                borderLeftStyle:   "solid",
+                background:      due.urgent ? "#1c1010" : "#161616",
+                border:          `1px solid ${due.urgent ? "#3a1515" : "#222"}`,
+                borderLeftColor: due.color,
+                borderLeftWidth: 3,
+                borderLeftStyle: "solid",
               }}>
+
                 {/* Due label */}
                 <div style={{ ...s.dueRow, color: due.color }}>
                   {due.pulse && <span style={s.dot} />}
@@ -186,27 +177,25 @@ export default function BidBoard() {
 }
 
 const s = {
-  root:      { width:220, minHeight:"100vh", background:"#111", fontFamily:"'DM Sans',sans-serif", display:"flex", flexDirection:"column", borderRight:`3px solid ${RED}` },
-  header:    { background:RED, padding:"14px 12px 10px", textAlign:"center", borderBottom:`2px solid ${MED_RED}`, flexShrink:0 },
-  logo:      { color:"#fff", fontSize:15, fontWeight:700, fontFamily:"'DM Serif Display',serif", letterSpacing:3 },
-  sub:       { color:LIGHT_RED, fontSize:8, letterSpacing:2, opacity:0.8, marginTop:1 },
-  time:      { color:LIGHT_RED, fontSize:13, fontWeight:600, marginTop:7 },
-  date:      { color:LIGHT_RED, fontSize:9, opacity:0.7, marginTop:2 },
+  root:      { width:300, minHeight:"100vh", background:"#111", fontFamily:"'DM Sans',sans-serif", display:"flex", flexDirection:"column", borderRight:`3px solid ${RED}` },
+  header:    { background:RED, padding:"10px 12px 8px", textAlign:"center", borderBottom:`2px solid ${MED_RED}`, flexShrink:0 },
+  logo:      { color:"#fff", fontSize:18, fontWeight:700, fontFamily:"'DM Serif Display',serif", letterSpacing:3 },
+  sub:       { color:LIGHT_RED, fontSize:9, letterSpacing:2, opacity:0.8, marginTop:1 },
   statsBar:  { background:"#1a1a1a", borderBottom:"1px solid #2a2a2a", padding:"6px 10px", display:"flex", gap:8, alignItems:"center", flexShrink:0 },
   pill:      { display:"flex", alignItems:"center", gap:5 },
-  badge:     { color:"#fff", borderRadius:2, fontSize:10, fontWeight:700, padding:"1px 5px", minWidth:18, textAlign:"center" },
-  statLabel: { color:GREY, fontSize:8, letterSpacing:0.8 },
+  badge:     { color:"#fff", borderRadius:2, fontSize:11, fontWeight:700, padding:"1px 6px", minWidth:20, textAlign:"center" },
+  statLabel: { color:GREY, fontSize:9, letterSpacing:0.8 },
   list:      { flex:1, overflowY:"auto", padding:"8px 0" },
   card:      { margin:"0 8px 10px", borderRadius:3, padding:"9px 10px 8px", position:"relative" },
   dueRow:    { display:"flex", alignItems:"center", gap:5, marginBottom:3 },
-  dot:       { width:5, height:5, borderRadius:"50%", background:RED, display:"inline-block", animation:"pulse 1.4s ease-in-out infinite", flexShrink:0 },
-  dueLabel:  { fontSize:8, fontWeight:700, letterSpacing:1.2, textTransform:"uppercase" },
-  dueTime:   { color:GREY, fontSize:8, marginBottom:5, letterSpacing:0.3 },
-  dealName:  { color:"#eee", fontSize:11, fontWeight:600, lineHeight:1.35, marginBottom:5 },
-  amount:    { color:LIGHT_RED, fontSize:13, fontFamily:"'DM Serif Display',serif", marginBottom:5 },
-  ownerRow:  { display:"flex", alignItems:"center", gap:5 },
-  avatar:    { width:16, height:16, borderRadius:"50%", background:RED, color:"#fff", fontSize:7, fontWeight:700, display:"inline-flex", alignItems:"center", justifyContent:"center", flexShrink:0 },
-  ownerName: { color:GREY, fontSize:9 },
+  dot:       { width:6, height:6, borderRadius:"50%", background:RED, display:"inline-block", animation:"pulse 1.4s ease-in-out infinite", flexShrink:0 },
+  dueLabel:  { fontSize:13, fontWeight:800, letterSpacing:1, textTransform:"uppercase" },
+  dueTime:   { color:GREY, fontSize:9, marginBottom:5, letterSpacing:0.3 },
+  dealName:  { color:"#eee", fontSize:13, fontWeight:600, lineHeight:1.35, marginBottom:6 },
+  amount:    { color:LIGHT_RED, fontSize:16, fontFamily:"'DM Serif Display',serif", marginBottom:6 },
+  ownerRow:  { display:"flex", alignItems:"center", gap:6 },
+  avatar:    { width:20, height:20, borderRadius:"50%", background:RED, color:"#fff", fontSize:9, fontWeight:700, display:"inline-flex", alignItems:"center", justifyContent:"center", flexShrink:0 },
+  ownerName: { color:"#ccc", fontSize:12, fontWeight:500 },
   msg:       { color:GREY, fontSize:10, textAlign:"center", padding:"20px 12px", display:"flex", flexDirection:"column", alignItems:"center", gap:8 },
   spinner:   { width:16, height:16, border:"2px solid #333", borderTop:`2px solid ${RED}`, borderRadius:"50%", animation:"spin 0.8s linear infinite" },
   footer:    { background:"#0e0e0e", borderTop:"1px solid #1f1f1f", padding:"7px 12px", textAlign:"center", color:"#333", fontSize:8, letterSpacing:0.5, flexShrink:0 },
